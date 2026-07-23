@@ -1,0 +1,30 @@
+{
+  "name": "debate-me",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI-powered adversarial learning tool — debate an AI that argues the opposing side of any concept you're studying.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@huggingface/inference": "^3.6.0",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^14.2.35",
+    "next": "^14.2.35",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^4.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.39",
+    "tailwindcss": "^3.4.6",
+    "typescript": "^5.5.3"
+  }
+}
