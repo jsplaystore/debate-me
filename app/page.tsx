@@ -18,11 +18,45 @@ export default function TopicScreen() {
   const setTopicAndPosition = useDebate((s) => s.setTopicAndPosition);
   const [topic, setTopic] = useState("");
   const [position, setPosition] = useState<Position>("For");
+  const [checking, setChecking] = useState(false);
+  const [blocked, setBlocked] = useState<{
+    reason: string;
+    suggestion: string;
+    kind: string;
+  } | null>(null);
 
-  function start() {
-    if (!topic.trim()) return;
-    setTopicAndPosition(topic.trim(), position);
+  async function start() {
+    const t = topic.trim();
+    if (!t || checking) return;
+    setBlocked(null);
+    setChecking(true);
+    try {
+      const res = await fetch("/api/topic-check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: t }),
+      });
+      const data = await res.json();
+      if (res.ok && data.debatable === false) {
+        setBlocked({
+          reason: data.reason || "That isn't a debatable claim.",
+          suggestion: data.suggestion || "",
+          kind: data.kind || "",
+        });
+        return; // hard-stop: don't debate settled facts or falsehoods
+      }
+    } catch {
+      /* fail open — if the gate errors, let the debate proceed */
+    } finally {
+      setChecking(false);
+    }
+    setTopicAndPosition(t, position);
     router.push("/debate");
+  }
+
+  function applySuggestion(s: string) {
+    setTopic(s);
+    setBlocked(null);
   }
 
   return (
@@ -46,7 +80,10 @@ export default function TopicScreen() {
         <label className="label">The claim</label>
         <textarea
           value={topic}
-          onChange={(e) => setTopic(e.target.value)}
+          onChange={(e) => {
+            setTopic(e.target.value);
+            if (blocked) setBlocked(null);
+          }}
           placeholder="State a resolution to defend…"
           rows={2}
           className="mt-2 w-full resize-none border border-line bg-surface p-4 font-display text-[18px] leading-snug tracking-[-0.01em] text-ink outline-none placeholder:text-muted focus:border-accent"
@@ -103,14 +140,39 @@ export default function TopicScreen() {
         <button
           type="button"
           onClick={start}
-          disabled={!topic.trim()}
+          disabled={!topic.trim() || checking}
           className="flex w-full items-center justify-between border border-ink bg-ink px-5 py-4 transition hover:bg-accent hover:border-accent disabled:cursor-not-allowed disabled:opacity-30"
         >
           <span className="font-mono text-[13px] uppercase tracking-[0.14em] text-surface">
-            Open the debate
+            {checking ? "Checking the claim…" : "Open the debate"}
           </span>
-          <span className="kbd text-surface/70">Ctrl + Enter →</span>
+          <span className="kbd text-surface/70">
+            {checking ? "▍" : "Ctrl + Enter →"}
+          </span>
         </button>
+
+        {blocked && (
+          <div className="mt-3 border border-low bg-low/5 p-4">
+            <div className="label text-low">Not a debatable claim</div>
+            <p className="mt-2 text-[14px] text-ink">{blocked.reason}</p>
+            <p className="mt-1 text-[13px] text-muted">
+              This tool won&apos;t argue against settled facts or defend
+              falsehoods — you&apos;d be practicing on misinformation.
+            </p>
+            {blocked.suggestion && (
+              <button
+                type="button"
+                onClick={() => applySuggestion(blocked.suggestion)}
+                className="mt-3 block w-full border border-line bg-surface p-3 text-left transition hover:border-accent"
+              >
+                <span className="label text-muted">Debate this instead</span>
+                <span className="mt-1 block text-[14px] text-ink">
+                  {blocked.suggestion}
+                </span>
+              </button>
+            )}
+          </div>
+        )}
       </section>
 
       <div className="pt-4">

@@ -120,6 +120,32 @@ export function debriefUserPrompt(params: {
   ].join("\n");
 }
 
+/**
+ * Debatability gate — is this resolution something a reasonable person can
+ * genuinely argue for AND against, or is it a settled fact / a falsehood?
+ * STRICT JSON out.
+ */
+export function topicCheckSystemPrompt(): string {
+  return [
+    `You are the gatekeeper for a debate-practice tool. A good debate resolution is one where informed, reasonable people genuinely disagree — a matter of opinion, values, interpretation, policy, or contested/uncertain evidence.`,
+    `A BAD resolution is one that is not actually debatable: an established scientific/historical fact (e.g. "the Earth is round", "the Holocaust happened", "water is H2O"), OR a claim that is simply false/pseudoscientific (e.g. "vaccines cause autism", "the Earth is flat"). Debating these means either arguing against reality or defending misinformation — which this tool must refuse.`,
+    ``,
+    `Return a SINGLE valid JSON object and NOTHING else (no prose, no markdown fences):`,
+    `{`,
+    `  "debatable": <true|false>,`,
+    `  "kind": "<opinion | value | interpretation | policy | contested-empirical | settled-fact | false-claim>",`,
+    `  "reason": "<one short sentence explaining the verdict>",`,
+    `  "suggestion": "<if NOT debatable, a genuinely debatable resolution about the SAME subject the student could argue instead; otherwise empty string>"`,
+    `}`,
+    `Set "debatable": true only for kinds opinion, value, interpretation, policy, or contested-empirical. Set false for settled-fact and false-claim.`,
+    `Be reasonable — most opinion/value/policy claims ARE debatable. Only block clear settled facts or clear falsehoods.`,
+  ].join("\n");
+}
+
+export function topicCheckUserPrompt(topic: string) {
+  return `Proposed debate resolution: "${topic}"\n\nReturn the JSON verdict.`;
+}
+
 /** Bootstrapper — extract debatable claims from a reading. STRICT JSON out. */
 export function bootstrapSystemPrompt(): string {
   return [
