@@ -72,6 +72,32 @@ function isTransient(err: any): boolean {
   );
 }
 
+/** Hard walls — no point retrying or falling back across models. */
+function isTerminal(err: any): { hit: boolean; message?: string } {
+  const msg = String(err?.message || err || "").toLowerCase();
+  if (
+    msg.includes("depleted") ||
+    msg.includes("monthly included credits") ||
+    msg.includes("subscribe to pro") ||
+    msg.includes("purchase") ||
+    msg.includes("payment required") ||
+    msg.includes("402")
+  ) {
+    return {
+      hit: true,
+      message:
+        "This Hugging Face account has run out of free monthly inference credits. Use a token from an account with remaining free credits, or upgrade the HF plan, then try again.",
+    };
+  }
+  if (msg.includes("invalid") && msg.includes("token")) {
+    return { hit: true, message: "The Hugging Face token is invalid. Check HF_TOKEN in .env.local." };
+  }
+  if (msg.includes("401") || msg.includes("unauthorized")) {
+    return { hit: true, message: "Hugging Face rejected the token (unauthorized). Check HF_TOKEN." };
+  }
+  return { hit: false };
+}
+
 async function callChatModel(
   model: string,
   messages: ChatMessage[],
@@ -108,6 +134,8 @@ export async function chat(
         return await callChatModel(model, messages, opts);
       } catch (err) {
         lastErr = err;
+        const terminal = isTerminal(err);
+        if (terminal.hit) throw new Error(terminal.message);
         if (isTransient(err) && attempt === 0) {
           await sleep(1200);
           continue; // retry same model once
@@ -121,6 +149,48 @@ export async function chat(
       lastErr?.message || lastErr
     }`
   );
+}
+
+/**
+ * chat() for endpoints that need JSON back. Runs the generation, tries to
+ * extract JSON, and — if the model returned malformed/prose output — retries
+ * once at a lower temperature with a blunt "return ONLY JSON" nudge. Raw output
+ * is logged on hard failure so it's debuggable.
+ */
+export async function chatJson<T = any>(
+  messages: ChatMessage[],
+  opts: { maxTokens?: number; temperature?: number } = {}
+): Promise<T> {
+  const { extractJson } = await import("./json");
+
+  const first = await chat(messages, {
+    maxTokens: opts.maxTokens ?? 700,
+    temperature: opts.temperature ?? 0.4,
+  });
+  try {
+    return extractJson<T>(first);
+  } catch {
+    console.warn("[chatJson] first parse failed, retrying strict. Raw:", first.slice(0, 400));
+  }
+
+  const strictMessages: ChatMessage[] = [
+    ...messages,
+    {
+      role: "user",
+      content:
+        "Your previous reply was not valid JSON. Reply again with ONLY the JSON object — no prose, no markdown code fences, no commentary. Start with { and end with }.",
+    },
+  ];
+  const second = await chat(strictMessages, {
+    maxTokens: opts.maxTokens ?? 700,
+    temperature: 0.2,
+  });
+  try {
+    return extractJson<T>(second);
+  } catch (e) {
+    console.error("[chatJson] second parse failed. Raw:", second.slice(0, 600));
+    throw e;
+  }
 }
 
 export type StrengthLabel =

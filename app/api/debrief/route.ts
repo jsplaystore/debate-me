@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { chat, type ChatMessage } from "@/lib/hf";
+import { chatJson, type ChatMessage } from "@/lib/hf";
 import {
   debriefSystemPrompt,
   debriefUserPrompt,
   type Position,
 } from "@/lib/prompts";
-import { extractJson } from "@/lib/json";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,8 +41,10 @@ export async function POST(req: NextRequest) {
       },
     ];
 
-    const raw = await chat(messages, { maxTokens: 800, temperature: 0.4 });
-    const parsed = extractJson<Debrief>(raw);
+    const parsed = await chatJson<Debrief>(messages, {
+      maxTokens: 800,
+      temperature: 0.4,
+    });
 
     // Clamp / sanitize.
     const score = Math.max(0, Math.min(100, Math.round(Number(parsed.score) || 0)));

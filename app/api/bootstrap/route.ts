@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { chat, type ChatMessage } from "@/lib/hf";
+import { chatJson, type ChatMessage } from "@/lib/hf";
 import { bootstrapSystemPrompt, bootstrapUserPrompt } from "@/lib/prompts";
-import { extractJson } from "@/lib/json";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,8 +27,10 @@ export async function POST(req: NextRequest) {
       { role: "user", content: bootstrapUserPrompt(reading.slice(0, 6000)) },
     ];
 
-    const raw = await chat(messages, { maxTokens: 600, temperature: 0.4 });
-    const parsed = extractJson<BootstrapResult>(raw);
+    const parsed = await chatJson<BootstrapResult>(messages, {
+      maxTokens: 600,
+      temperature: 0.4,
+    });
     const claims = Array.isArray(parsed.claims)
       ? parsed.claims.filter((c) => c && c.claim).slice(0, 5)
       : [];

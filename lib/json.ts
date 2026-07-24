@@ -1,26 +1,60 @@
 /**
- * Best-effort extraction of a JSON object from an LLM response.
- * Open models sometimes wrap JSON in prose or ```json fences; this pulls the
- * first balanced {...} block and parses it.
+ * Best-effort extraction of a JSON value from an LLM response.
+ * Open models wrap JSON in prose, ```json fences, smart quotes, or trailing
+ * commas. This is deliberately tolerant: it pulls the first balanced {...} or
+ * [...] block and repairs the most common issues before parsing.
  */
 export function extractJson<T = any>(text: string): T {
   if (!text) throw new Error("Empty model response.");
 
-  // Strip common code fences.
-  let s = text.trim();
-  s = s.replace(/^```(?:json)?/i, "").replace(/```$/i, "").trim();
+  const candidates: string[] = [];
 
-  // Fast path.
-  try {
-    return JSON.parse(s) as T;
-  } catch {
-    /* fall through */
+  const trimmed = text.trim();
+  candidates.push(trimmed);
+
+  // 1) Fenced ```json ... ``` block anywhere in the text.
+  const fence = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fence && fence[1]) candidates.push(fence[1].trim());
+
+  // 2) First balanced {...} and first balanced [...] block.
+  const obj = firstBalanced(trimmed, "{", "}");
+  if (obj) candidates.push(obj);
+  const arr = firstBalanced(trimmed, "[", "]");
+  if (arr) candidates.push(arr);
+
+  for (const c of candidates) {
+    const parsed = tryParse<T>(c);
+    if (parsed !== undefined) return parsed;
   }
 
-  // Find the first balanced { ... } block.
-  const start = s.indexOf("{");
-  if (start === -1) throw new Error("No JSON object found in model response.");
+  throw new Error("Could not parse JSON from model response.");
+}
 
+function tryParse<T>(raw: string): T | undefined {
+  const attempts = [raw, repair(raw)];
+  for (const a of attempts) {
+    try {
+      return JSON.parse(a) as T;
+    } catch {
+      /* try next */
+    }
+  }
+  return undefined;
+}
+
+/** Repair common LLM JSON defects. */
+function repair(s: string): string {
+  return s
+    .replace(/[“”]/g, '"') // smart double quotes
+    .replace(/[‘’]/g, "'") // smart single quotes
+    .replace(/,\s*([}\]])/g, "$1") // trailing commas before } or ]
+    .trim();
+}
+
+/** Return the first balanced bracketed block, respecting strings/escapes. */
+function firstBalanced(s: string, open: string, close: string): string | null {
+  const start = s.indexOf(open);
+  if (start === -1) return null;
   let depth = 0;
   let inString = false;
   let escape = false;
@@ -36,14 +70,11 @@ export function extractJson<T = any>(text: string): T {
     }
     if (ch === '"') inString = !inString;
     if (inString) continue;
-    if (ch === "{") depth++;
-    else if (ch === "}") {
+    if (ch === open) depth++;
+    else if (ch === close) {
       depth--;
-      if (depth === 0) {
-        const candidate = s.slice(start, i + 1);
-        return JSON.parse(candidate) as T;
-      }
+      if (depth === 0) return s.slice(start, i + 1);
     }
   }
-  throw new Error("Could not parse JSON from model response.");
+  return null;
 }
