@@ -85,7 +85,7 @@ npm run dev
 ```
 Open <http://localhost:3000>.
 
-> **Model availability:** the free serverless tier rotates which models are hot. If the default chat model isn't available at demo time, override it without touching code:
+> **Model availability & resilience:** the free serverless tier rotates which models are hot and often returns _"model is busy"_. The app handles this automatically — `chat()` retries transient errors with backoff and **falls back across several instruct models** (Llama-3, Llama-3.1, Mistral-7B, Mixtral, Zephyr) so a demo never dead-ends on one provider's capacity. You can still pin the primary model without touching code:
 > ```
 > HF_CHAT_MODEL=mistralai/Mixtral-8x7B-Instruct-v0.1
 > ```
