@@ -29,6 +29,12 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local run logs / scratch
+*.log
+run.*.log
+server.pid
+scratch-*.mjs
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
