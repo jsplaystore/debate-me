@@ -26,93 +26,101 @@ export default function TopicScreen() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-4 py-10">
-      <header className="mb-8 text-center">
-        <h1 className="bg-gradient-to-r from-student via-white to-opponent bg-clip-text text-4xl font-extrabold tracking-tight text-transparent sm:text-5xl">
-          Debate&nbsp;Me
-        </h1>
-        <p className="mx-auto mt-3 max-w-md text-sm text-slate-400">
-          You learn a concept most deeply when forced to defend it. Pick a claim,
-          choose your side, and argue against an AI that{" "}
-          <span className="text-slate-200">won&apos;t let you off the hook</span>.
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 pb-24">
+      {/* Masthead */}
+      <header className="border-b border-line pb-5 pt-10">
+        <div className="flex items-baseline justify-between">
+          <h1 className="font-display text-2xl font-bold tracking-[-0.02em] text-ink">
+            DEBATE&nbsp;ME
+          </h1>
+          <span className="label hidden sm:block">Adversarial learning</span>
+        </div>
+        <p className="mt-2 max-w-lg text-[14px] text-muted">
+          Defend what you think you know. An AI takes the opposing side and
+          presses until you prove you understand it — then hands you a debrief.
         </p>
       </header>
 
-      <section className="space-y-5 rounded-2xl border border-white/10 bg-panel/50 p-5 shadow-xl">
-        <div>
-          <label className="mb-2 block text-sm font-semibold text-slate-200">
-            What&apos;s the claim?
-          </label>
-          <textarea
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            placeholder='e.g. "The New Deal helped end the Great Depression"'
-            rows={2}
-            className="w-full resize-none rounded-lg border border-white/10 bg-ink/70 p-3 text-sm text-slate-100 outline-none focus:border-student"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) start();
-            }}
-          />
-          <div className="mt-2 flex flex-wrap gap-2">
-            {EXAMPLES.map((ex) => (
-              <button
-                key={ex}
-                type="button"
-                onClick={() => setTopic(ex)}
-                className="rounded-full border border-white/10 bg-ink/50 px-3 py-1 text-xs text-slate-300 transition hover:border-student hover:text-white"
-              >
-                {ex}
-              </button>
-            ))}
-          </div>
+      {/* The claim */}
+      <section className="pt-8">
+        <label className="label">The claim</label>
+        <textarea
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          placeholder="State a resolution to defend…"
+          rows={2}
+          className="mt-2 w-full resize-none border border-line bg-surface p-4 font-display text-[18px] leading-snug tracking-[-0.01em] text-ink outline-none placeholder:text-muted focus:border-accent"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) start();
+          }}
+        />
+        <div className="mt-3 flex flex-wrap gap-2">
+          {EXAMPLES.map((ex) => (
+            <button
+              key={ex}
+              type="button"
+              onClick={() => setTopic(ex)}
+              className="border border-line bg-surface px-3 py-1.5 text-[12px] text-muted transition hover:border-accent hover:text-ink"
+            >
+              {ex}
+            </button>
+          ))}
         </div>
+      </section>
 
-        <div>
-          <label className="mb-2 block text-sm font-semibold text-slate-200">
-            Your position
-          </label>
-          <div className="grid grid-cols-2 gap-3">
-            {(["For", "Against"] as Position[]).map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setPosition(p)}
-                className={`rounded-lg border px-4 py-3 text-sm font-semibold transition ${
-                  position === p
-                    ? "border-student bg-student/20 text-white"
-                    : "border-white/10 bg-ink/50 text-slate-300 hover:border-white/30"
-                }`}
-              >
-                {p === "For" ? "👍 For" : "👎 Against"}
-              </button>
-            ))}
-          </div>
-          <p className="mt-2 text-xs text-slate-400">
-            The AI will argue{" "}
-            <span className="font-semibold text-opponent">
-              {position === "For" ? "Against" : "For"}
-            </span>{" "}
-            — the opposite of you.
-          </p>
+      {/* Position */}
+      <section className="pt-8">
+        <label className="label">Your side</label>
+        <div className="mt-2 grid grid-cols-2 border border-line">
+          {(["For", "Against"] as Position[]).map((p, i) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setPosition(p)}
+              className={`px-4 py-3 font-mono text-[13px] uppercase tracking-[0.12em] transition ${
+                i === 0 ? "border-r border-line" : ""
+              } ${
+                position === p
+                  ? "bg-ink text-surface"
+                  : "bg-surface text-muted hover:text-ink"
+              }`}
+            >
+              {p}
+            </button>
+          ))}
         </div>
+        <p className="mt-2 text-[13px] text-muted">
+          The AI argues{" "}
+          <span className="font-mono text-low">
+            {position === "For" ? "AGAINST" : "FOR"}
+          </span>{" "}
+          — the opposite of you.
+        </p>
+      </section>
 
+      {/* Run */}
+      <section className="pt-8">
         <button
           type="button"
           onClick={start}
           disabled={!topic.trim()}
-          className="w-full rounded-lg bg-gradient-to-r from-student to-opponent px-4 py-3 text-sm font-bold text-white shadow-lg transition hover:opacity-90 disabled:opacity-40"
+          className="flex w-full items-center justify-between border border-ink bg-ink px-5 py-4 transition hover:bg-accent hover:border-accent disabled:cursor-not-allowed disabled:opacity-30"
         >
-          Start the debate →
+          <span className="font-mono text-[13px] uppercase tracking-[0.14em] text-surface">
+            Open the debate
+          </span>
+          <span className="kbd text-surface/70">Ctrl + Enter →</span>
         </button>
       </section>
 
-      <div className="mt-4">
+      <div className="pt-4">
         <TopicBootstrapper onPick={(claim) => setTopic(claim)} />
       </div>
 
-      <footer className="mt-8 text-center text-xs text-slate-500">
-        Powered by open-source models on the Hugging Face Inference API ·
-        Generative debate + zero-shot argument scoring
+      <footer className="mt-auto pt-10">
+        <p className="kbd">
+          Open-source models · generative opponent + argument classifier
+        </p>
       </footer>
     </main>
   );

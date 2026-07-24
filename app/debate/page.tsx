@@ -8,6 +8,13 @@ import type { StrengthLabel } from "@/lib/hf";
 
 const MIN_EXCHANGES = 5;
 
+const STATUS_LINES = [
+  "Building the counter…",
+  "Finding the weak point…",
+  "Loading a counterexample…",
+  "Sharpening the question…",
+];
+
 export default function DebateScreen() {
   const router = useRouter();
   const {
@@ -24,18 +31,14 @@ export default function DebateScreen() {
   const [aiThinking, setAiThinking] = useState(false);
   const [scoring, setScoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastWeakness, setLastWeakness] = useState<StrengthLabel | null>(null);
+  const [statusIdx, setStatusIdx] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const openedRef = useRef(false);
 
-  // Guard: no topic set → back to start.
   useEffect(() => {
-    if (!started || !topic) {
-      router.replace("/");
-    }
+    if (!started || !topic) router.replace("/");
   }, [started, topic, router]);
 
-  // Auto-scroll on new content.
   useEffect(() => {
     scrollRef.current?.scrollTo({
       top: scrollRef.current.scrollHeight,
@@ -43,7 +46,16 @@ export default function DebateScreen() {
     });
   }, [turns, aiThinking]);
 
-  // Kick off the AI's opening argument once.
+  // Cycle status lines while the AI is thinking.
+  useEffect(() => {
+    if (!aiThinking) return;
+    const t = setInterval(
+      () => setStatusIdx((i) => (i + 1) % STATUS_LINES.length),
+      1400
+    );
+    return () => clearInterval(t);
+  }, [aiThinking]);
+
   useEffect(() => {
     if (!started || !topic) return;
     if (openedRef.current) return;
@@ -70,7 +82,7 @@ export default function DebateScreen() {
       addTurn({ role: "opponent", content: data.reply });
     } catch (e: any) {
       setError(e.message);
-      openedRef.current = false; // allow retry
+      openedRef.current = false;
     } finally {
       setAiThinking(false);
     }
@@ -85,14 +97,11 @@ export default function DebateScreen() {
     const studentTurn: Turn = { role: "student", content: text };
     addTurn(studentTurn);
 
-    // Build history AFTER adding the student's turn (store update is async-ish,
-    // so construct it explicitly here).
     const history = [...turns, studentTurn].map((t) => ({
       role: t.role,
       content: t.content,
     }));
 
-    // 1) Score the student's argument (classifier) — drives adaptation.
     setScoring(true);
     let weakness: StrengthLabel | null = null;
     try {
@@ -109,15 +118,13 @@ export default function DebateScreen() {
           scores: sdata.scores,
         });
         weakness = sdata.label as StrengthLabel;
-        setLastWeakness(weakness);
       }
     } catch {
-      /* scoring is best-effort; never block the debate */
+      /* scoring is best-effort */
     } finally {
       setScoring(false);
     }
 
-    // 2) Get the AI's adapted counter-argument.
     setAiThinking(true);
     try {
       const res = await fetch("/api/chat", {
@@ -135,66 +142,42 @@ export default function DebateScreen() {
     }
   }
 
-  function endDebate() {
-    // Stash transcript for the debrief screen via the persisted store.
-    router.push("/debrief");
-  }
-
   const canEnd = studentTurnCount >= MIN_EXCHANGES;
   const remaining = Math.max(0, MIN_EXCHANGES - studentTurnCount);
 
   if (!started || !topic) return null;
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-3 py-4 sm:px-4">
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6">
       {/* Header */}
-      <div className="sticky top-0 z-10 -mx-3 mb-2 rounded-b-xl border-b border-white/10 bg-ink/80 px-3 py-3 backdrop-blur sm:mx-0 sm:rounded-xl sm:border sm:px-4">
-        <div className="flex items-start justify-between gap-3">
+      <div className="sticky top-0 z-10 border-b border-line bg-paper/95 pb-3 pt-6 backdrop-blur">
+        <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="truncate text-sm font-semibold text-slate-100">
+            <div className="label mb-1">Resolution</div>
+            <div className="font-display text-[16px] leading-snug tracking-[-0.01em] text-ink">
               {topic}
             </div>
-            <div className="mt-0.5 text-xs text-slate-400">
-              You: <span className="text-student">{position}</span> · AI:{" "}
-              <span className="text-opponent">
-                {position === "For" ? "Against" : "For"}
+            <div className="kbd mt-1.5">
+              You <span className="text-accent">{position.toUpperCase()}</span>
+              {"  ·  "}
+              AI{" "}
+              <span className="text-low">
+                {position === "For" ? "AGAINST" : "FOR"}
               </span>
             </div>
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-1">
-            <div className="rounded-full bg-white/5 px-2.5 py-1 text-xs font-medium text-slate-300">
-              Turn {studentTurnCount}/{MIN_EXCHANGES}+
+          <div className="shrink-0 text-right">
+            <div className="font-mono text-[13px] text-ink">
+              {String(studentTurnCount).padStart(2, "0")}
+              <span className="text-muted">/{MIN_EXCHANGES}+</span>
             </div>
-            <button
-              type="button"
-              onClick={endDebate}
-              disabled={!canEnd}
-              className="rounded-full bg-strong/90 px-3 py-1 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-slate-500"
-              title={
-                canEnd
-                  ? "End debate and see your debrief"
-                  : `Make ${remaining} more argument${remaining === 1 ? "" : "s"} first`
-              }
-            >
-              End & get debrief
-            </button>
+            <div className="label mt-0.5">Turns</div>
           </div>
         </div>
-        {!canEnd && (
-          <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-white/5">
-            <div
-              className="h-full bg-gradient-to-r from-student to-opponent transition-all duration-500"
-              style={{ width: `${(studentTurnCount / MIN_EXCHANGES) * 100}%` }}
-            />
-          </div>
-        )}
       </div>
 
       {/* Stream */}
-      <div
-        ref={scrollRef}
-        className="debate-scroll flex-1 space-y-4 overflow-y-auto py-3"
-      >
+      <div ref={scrollRef} className="stream flex-1 overflow-y-auto">
         {turns.map((t, i) => (
           <DebateMessage
             key={i}
@@ -209,68 +192,67 @@ export default function DebateScreen() {
         ))}
 
         {aiThinking && (
-          <div className="flex justify-start">
-            <div className="rounded-2xl rounded-bl-sm border border-white/5 bg-panel px-4 py-3">
-              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-opponent">
-                AI Opponent
-              </div>
-              <div className="flex gap-1">
-                <span className="h-2 w-2 animate-pulse-soft rounded-full bg-opponent" />
-                <span
-                  className="h-2 w-2 animate-pulse-soft rounded-full bg-opponent"
-                  style={{ animationDelay: "0.2s" }}
-                />
-                <span
-                  className="h-2 w-2 animate-pulse-soft rounded-full bg-opponent"
-                  style={{ animationDelay: "0.4s" }}
-                />
-              </div>
+          <div className="border-t border-line py-5 first:border-t-0">
+            <div className="label mb-2 text-low">Opponent</div>
+            <div className="kbd flex items-center gap-2">
+              <span>{STATUS_LINES[statusIdx]}</span>
+              <span className="animate-blink">▍</span>
             </div>
           </div>
         )}
 
         {error && (
-          <div className="mx-auto max-w-md rounded-lg border border-error/40 bg-error/10 px-3 py-2 text-center text-xs text-red-200">
+          <div className="my-5 border border-low bg-low/5 px-4 py-3 font-mono text-[12px] text-low">
             {error}
           </div>
         )}
       </div>
 
       {/* Composer */}
-      <div className="sticky bottom-0 -mx-3 border-t border-white/10 bg-ink/90 px-3 py-3 backdrop-blur sm:mx-0 sm:rounded-xl sm:border">
-        <div className="flex items-end gap-2">
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                void send();
-              }
-            }}
-            placeholder={
-              turns.length === 0
-                ? "The AI is preparing its opening…"
-                : "Make your argument… (Enter to send, Shift+Enter for a new line)"
+      <div className="sticky bottom-0 border-t border-line bg-paper/95 py-4 backdrop-blur">
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              void send();
             }
-            rows={2}
-            disabled={aiThinking && turns.length === 0}
-            className="max-h-40 flex-1 resize-none rounded-xl border border-white/10 bg-panel/70 p-3 text-sm text-slate-100 outline-none focus:border-student disabled:opacity-50"
-          />
-          <button
-            type="button"
-            onClick={() => void send()}
-            disabled={!input.trim() || aiThinking}
-            className="rounded-xl bg-student px-4 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-40"
-          >
-            Send
-          </button>
+          }}
+          placeholder={
+            turns.length === 0
+              ? "The AI is preparing its opening…"
+              : "Make your argument…"
+          }
+          rows={3}
+          disabled={aiThinking && turns.length === 0}
+          className="w-full resize-none border border-line bg-surface p-3 text-[15px] text-ink outline-none placeholder:text-muted focus:border-accent disabled:opacity-50"
+        />
+        <div className="mt-2 flex items-center justify-between">
+          <span className="kbd">
+            {canEnd
+              ? "Minimum reached — end whenever you're ready"
+              : `${remaining} more argument${remaining === 1 ? "" : "s"} to unlock the debrief`}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => router.push("/debrief")}
+              disabled={!canEnd}
+              className="label border border-line bg-surface px-3 py-2 text-muted transition enabled:hover:border-accent enabled:hover:text-ink disabled:opacity-30"
+            >
+              End & debrief
+            </button>
+            <button
+              type="button"
+              onClick={() => void send()}
+              disabled={!input.trim() || aiThinking}
+              className="label border border-ink bg-ink px-4 py-2 text-surface transition enabled:hover:bg-accent enabled:hover:border-accent disabled:opacity-30"
+            >
+              Send →
+            </button>
+          </div>
         </div>
-        <p className="mt-1.5 text-center text-[11px] text-slate-500">
-          {lastWeakness
-            ? "The AI is adapting to how you're arguing."
-            : "Argue your strongest case — the AI is tracking your reasoning."}
-        </p>
       </div>
     </main>
   );

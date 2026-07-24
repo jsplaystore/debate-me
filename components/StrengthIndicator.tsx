@@ -4,31 +4,15 @@ import type { StrengthLabel } from "@/lib/hf";
 
 const META: Record<
   StrengthLabel,
-  { label: string; color: string; bar: string; emoji: string }
+  { label: string; text: string; bar: string }
 > = {
-  strong: {
-    label: "Strong",
-    color: "text-strong",
-    bar: "bg-strong",
-    emoji: "💪",
-  },
-  weak: {
-    label: "Weak",
-    color: "text-weak",
-    bar: "bg-weak",
-    emoji: "⚠️",
-  },
-  "off-topic": {
-    label: "Off-topic",
-    color: "text-offtopic",
-    bar: "bg-offtopic",
-    emoji: "🎯",
-  },
+  strong: { label: "Strong", text: "text-good", bar: "bg-good" },
+  weak: { label: "Weak", text: "text-mid", bar: "bg-mid" },
+  "off-topic": { label: "Off-topic", text: "text-muted", bar: "bg-muted" },
   "contains-factual-error": {
     label: "Factual error",
-    color: "text-error",
-    bar: "bg-error",
-    emoji: "❌",
+    text: "text-low",
+    bar: "bg-low",
   },
 };
 
@@ -45,9 +29,9 @@ export function StrengthIndicator({
 }) {
   if (loading) {
     return (
-      <div className="mt-1 flex items-center gap-2 text-xs text-slate-400">
-        <span className="h-2 w-2 rounded-full bg-slate-500 animate-pulse-soft" />
-        Scoring argument…
+      <div className="mt-2 flex items-center gap-2">
+        <span className="label">Scoring</span>
+        <span className="kbd animate-blink">—</span>
       </div>
     );
   }
@@ -57,14 +41,14 @@ export function StrengthIndicator({
   const pct = Math.round(strength.score * 100);
 
   return (
-    <div className="mt-2 w-full">
-      <div className="flex items-center justify-between text-xs">
-        <span className={`font-semibold ${meta.color}`}>
-          {meta.emoji} {meta.label}
+    <div className="mt-2.5 w-full">
+      <div className="flex items-center justify-between">
+        <span className="label">Argument strength</span>
+        <span className={`font-mono text-[11px] ${meta.text}`}>
+          {meta.label} · {pct}%
         </span>
-        <span className="text-slate-400">{pct}% confidence</span>
       </div>
-      <div className="mt-1 h-1.5 w-full rounded-full bg-slate-700/60 overflow-hidden">
+      <div className="mt-1.5 h-[3px] w-full bg-line">
         <div
           className={`h-full ${meta.bar} transition-all duration-500`}
           style={{ width: `${pct}%` }}

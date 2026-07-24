@@ -8,28 +8,38 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#0b1020",
-        panel: "#141a2e",
-        student: "#2563eb",
-        opponent: "#e11d48",
-        strong: "#22c55e",
-        weak: "#f59e0b",
-        offtopic: "#94a3b8",
-        error: "#ef4444",
+        paper: "#f4f5f7",
+        surface: "#ffffff",
+        ink: "#17181c",
+        muted: "#6b7280",
+        line: "#e3e5ea",
+        accent: "#2b4bf2",
+        "accent-dark": "#1f39c9",
+        good: "#178c56",
+        mid: "#b8791c",
+        low: "#c13e2e",
+      },
+      fontFamily: {
+        display: ["var(--font-display)", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
+        body: ["system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
+      },
+      borderRadius: {
+        none: "0",
       },
       keyframes: {
         "fade-in": {
-          "0%": { opacity: "0", transform: "translateY(6px)" },
+          "0%": { opacity: "0", transform: "translateY(4px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
-        "pulse-soft": {
+        blink: {
           "0%, 100%": { opacity: "1" },
-          "50%": { opacity: "0.5" },
+          "50%": { opacity: "0.25" },
         },
       },
       animation: {
-        "fade-in": "fade-in 0.25s ease-out",
-        "pulse-soft": "pulse-soft 1.2s ease-in-out infinite",
+        "fade-in": "fade-in 0.2s ease-out",
+        blink: "blink 1s step-end infinite",
       },
     },
   },

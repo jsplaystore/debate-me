@@ -36,59 +36,53 @@ export function TopicBootstrapper({
   }
 
   return (
-    <div className="rounded-xl border border-white/10 bg-panel/60 p-4">
+    <div className="border border-line bg-surface">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between text-left"
+        className="flex w-full items-center justify-between px-4 py-3 text-left"
       >
-        <span className="text-sm font-medium text-slate-200">
-          📚 Don&apos;t know what to debate yet? Paste a reading
-        </span>
-        <span className="text-slate-400">{open ? "−" : "+"}</span>
+        <span className="label">Don&apos;t know enough yet? Paste a reading</span>
+        <span className="kbd">{open ? "[ − ]" : "[ + ]"}</span>
       </button>
 
       {open && (
-        <div className="mt-3 space-y-3">
-          <p className="text-xs text-slate-400">
-            Paste lecture notes, an article, or a textbook excerpt. The AI will
-            pull out the most debatable claims for you to pick from.
+        <div className="space-y-3 border-t border-line px-4 py-4">
+          <p className="text-[13px] text-muted">
+            Paste lecture notes, an article, or a textbook excerpt. The AI pulls
+            out the most debatable claims for you to pick from.
           </p>
           <textarea
             value={reading}
             onChange={(e) => setReading(e.target.value)}
-            placeholder="Paste your reading here…"
+            placeholder="Paste your reading…"
             rows={5}
-            className="w-full rounded-lg border border-white/10 bg-ink/70 p-3 text-sm text-slate-100 outline-none focus:border-student"
+            className="w-full border border-line bg-paper p-3 text-[14px] text-ink outline-none placeholder:text-muted focus:border-accent"
           />
           <button
             type="button"
             onClick={extract}
             disabled={loading || reading.trim().length < 40}
-            className="rounded-lg bg-student px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+            className="label border border-ink bg-ink px-4 py-2 text-surface transition disabled:opacity-30"
           >
-            {loading ? "Reading…" : "Extract debatable claims"}
+            {loading ? "Reading…" : "Extract claims"}
           </button>
 
-          {error && <p className="text-xs text-error">{error}</p>}
+          {error && <p className="font-mono text-[12px] text-low">{error}</p>}
 
           {claims.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-slate-300">
-                Pick a claim to debate:
-              </p>
+            <div className="space-y-2 pt-1">
+              <p className="label">Pick a claim</p>
               {claims.map((c, i) => (
                 <button
                   key={i}
                   type="button"
                   onClick={() => onPick(c.claim)}
-                  className="block w-full rounded-lg border border-white/10 bg-ink/60 p-3 text-left transition hover:border-student"
+                  className="block w-full border border-line bg-paper p-3 text-left transition hover:border-accent"
                 >
-                  <div className="text-sm font-medium text-slate-100">
-                    {c.claim}
-                  </div>
+                  <div className="text-[14px] text-ink">{c.claim}</div>
                   {c.context && (
-                    <div className="mt-0.5 text-xs text-slate-400">
+                    <div className="mt-1 text-[12px] text-muted">
                       {c.context}
                     </div>
                   )}

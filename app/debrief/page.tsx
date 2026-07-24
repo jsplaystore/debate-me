@@ -12,42 +12,11 @@ type Debrief = {
   suggestedReadings: string[];
 };
 
-function ScoreRing({ score }: { score: number }) {
-  const r = 52;
-  const c = 2 * Math.PI * r;
-  const offset = c - (score / 100) * c;
-  const color =
-    score >= 75 ? "#22c55e" : score >= 50 ? "#f59e0b" : "#ef4444";
-  return (
-    <div className="relative h-36 w-36">
-      <svg className="h-36 w-36 -rotate-90" viewBox="0 0 120 120">
-        <circle
-          cx="60"
-          cy="60"
-          r={r}
-          fill="none"
-          stroke="rgba(255,255,255,0.08)"
-          strokeWidth="10"
-        />
-        <circle
-          cx="60"
-          cy="60"
-          r={r}
-          fill="none"
-          stroke={color}
-          strokeWidth="10"
-          strokeLinecap="round"
-          strokeDasharray={c}
-          strokeDashoffset={offset}
-          style={{ transition: "stroke-dashoffset 1s ease-out" }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-4xl font-extrabold text-white">{score}</span>
-        <span className="text-xs text-slate-400">/ 100</span>
-      </div>
-    </div>
-  );
+function verdictLabel(score: number) {
+  if (score >= 80) return { text: "Commanding", color: "text-good" };
+  if (score >= 65) return { text: "Solid", color: "text-good" };
+  if (score >= 45) return { text: "Contested", color: "text-mid" };
+  return { text: "Exposed", color: "text-low" };
 }
 
 export default function DebriefScreen() {
@@ -96,100 +65,106 @@ export default function DebriefScreen() {
     router.push("/");
   }
 
+  const verdict = debrief ? verdictLabel(debrief.score) : null;
+
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
-      <header className="mb-6 text-center">
-        <div className="text-xs font-semibold uppercase tracking-widest text-slate-400">
-          Debate Debrief
-        </div>
-        <h1 className="mt-1 text-2xl font-bold text-slate-100">{topic}</h1>
-        <p className="mt-1 text-xs text-slate-400">
-          You argued <span className="text-student">{position}</span> across{" "}
-          {studentTurnCount} turns
+    <main className="mx-auto w-full max-w-2xl flex-1 px-6 pb-24">
+      {/* Masthead */}
+      <header className="border-b border-line pb-4 pt-10">
+        <div className="label">Debrief</div>
+        <h1 className="mt-2 font-display text-xl font-semibold leading-snug tracking-[-0.01em] text-ink">
+          {topic}
+        </h1>
+        <p className="kbd mt-2">
+          You argued {position.toUpperCase()} · {studentTurnCount} turns
         </p>
       </header>
 
       {loading && (
-        <div className="flex flex-col items-center gap-3 py-16 text-slate-400">
-          <div className="flex gap-1.5">
-            <span className="h-3 w-3 animate-pulse-soft rounded-full bg-student" />
-            <span
-              className="h-3 w-3 animate-pulse-soft rounded-full bg-white"
-              style={{ animationDelay: "0.2s" }}
-            />
-            <span
-              className="h-3 w-3 animate-pulse-soft rounded-full bg-opponent"
-              style={{ animationDelay: "0.4s" }}
-            />
-          </div>
-          <p className="text-sm">Analyzing your performance…</p>
+        <div className="flex items-center gap-2 py-16">
+          <span className="label">Reviewing the transcript</span>
+          <span className="kbd animate-blink">▍</span>
         </div>
       )}
 
       {error && (
-        <div className="rounded-xl border border-error/40 bg-error/10 p-4 text-center text-sm text-red-200">
-          {error}
-          <div className="mt-3">
-            <button
-              onClick={() => location.reload()}
-              className="rounded-lg bg-student px-4 py-2 text-xs font-semibold text-white"
-            >
-              Retry
-            </button>
-          </div>
+        <div className="my-8 border border-low bg-low/5 p-4">
+          <p className="font-mono text-[12px] text-low">{error}</p>
+          <button
+            onClick={() => location.reload()}
+            className="label mt-3 border border-ink bg-ink px-3 py-2 text-surface"
+          >
+            Retry
+          </button>
         </div>
       )}
 
-      {debrief && !loading && (
-        <div className="space-y-5">
-          {/* Score */}
-          <section className="flex flex-col items-center gap-4 rounded-2xl border border-white/10 bg-panel/50 p-6 sm:flex-row sm:items-center">
-            <ScoreRing score={debrief.score} />
-            <div className="flex-1 text-center sm:text-left">
-              <div className="text-sm font-semibold text-slate-200">
-                Debate Score
+      {debrief && !loading && verdict && (
+        <div>
+          {/* Verdict */}
+          <section className="border-b border-line py-8">
+            <div className="flex items-end justify-between">
+              <div>
+                <div className="label">Verdict</div>
+                <div
+                  className={`mt-1 font-display text-2xl font-bold tracking-[-0.02em] ${verdict.color}`}
+                >
+                  {verdict.text}
+                </div>
               </div>
-              <p className="mt-1 text-sm leading-relaxed text-slate-300">
-                {debrief.summary}
-              </p>
+              <div className="text-right">
+                <div className="font-display text-6xl font-bold leading-none tracking-[-0.03em] text-ink">
+                  {debrief.score}
+                </div>
+                <div className="label mt-1">Debate score / 100</div>
+              </div>
             </div>
+            <p className="mt-5 text-[15px] leading-relaxed text-ink">
+              {debrief.summary}
+            </p>
           </section>
 
           {/* Strengths */}
-          <section className="rounded-2xl border border-strong/20 bg-strong/5 p-5">
-            <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-strong">
-              ✅ What you argued well
-            </h2>
-            <ul className="space-y-3">
-              {debrief.strengths.map((s, i) => (
-                <li key={i}>
-                  <div className="text-sm font-medium text-slate-100">
-                    {s.point}
-                  </div>
-                  <div className="mt-0.5 text-xs text-slate-400">{s.why}</div>
-                </li>
-              ))}
+          <section className="border-b border-line py-8">
+            <h2 className="label mb-4 text-good">What you argued well</h2>
+            <ul className="space-y-5">
               {debrief.strengths.length === 0 && (
-                <li className="text-xs text-slate-400">
-                  No standout strong arguments this round — see the gaps below.
+                <li className="text-[14px] text-muted">
+                  No standout arguments this round — see the gaps below.
                 </li>
               )}
+              {debrief.strengths.map((s, i) => (
+                <li key={i} className="flex gap-3">
+                  <span className="font-mono text-[13px] text-good">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <div>
+                    <div className="text-[15px] text-ink">{s.point}</div>
+                    <div className="mt-1 text-[13px] text-muted">{s.why}</div>
+                  </div>
+                </li>
+              ))}
             </ul>
           </section>
 
           {/* Gaps */}
-          <section className="rounded-2xl border border-opponent/20 bg-opponent/5 p-5">
-            <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-opponent">
-              ⚔️ Counterarguments you never addressed
+          <section className="border-b border-line py-8">
+            <h2 className="label mb-4 text-low">
+              Counterarguments you left standing
             </h2>
-            <ul className="space-y-3">
+            <ul className="space-y-5">
               {debrief.gaps.map((g, i) => (
-                <li key={i}>
-                  <div className="text-sm font-medium text-slate-100">
-                    {g.counterargument}
-                  </div>
-                  <div className="mt-0.5 text-xs text-slate-400">
-                    {g.impact}
+                <li key={i} className="flex gap-3">
+                  <span className="font-mono text-[13px] text-low">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <div>
+                    <div className="text-[15px] text-ink">
+                      {g.counterargument}
+                    </div>
+                    <div className="mt-1 text-[13px] text-muted">
+                      {g.impact}
+                    </div>
                   </div>
                 </li>
               ))}
@@ -197,33 +172,32 @@ export default function DebriefScreen() {
           </section>
 
           {/* Readings */}
-          <section className="rounded-2xl border border-white/10 bg-panel/50 p-5">
-            <h2 className="mb-3 text-sm font-bold text-slate-200">
-              📖 Read these to strengthen your case
-            </h2>
-            <div className="flex flex-wrap gap-2">
+          <section className="border-b border-line py-8">
+            <h2 className="label mb-4">Read next</h2>
+            <ul>
               {debrief.suggestedReadings.map((r, i) => (
-                <span
+                <li
                   key={i}
-                  className="rounded-full border border-white/10 bg-ink/60 px-3 py-1.5 text-xs text-slate-200"
+                  className="flex gap-3 border-t border-line py-3 first:border-t-0"
                 >
-                  {r}
-                </span>
+                  <span className="font-mono text-[13px] text-muted">→</span>
+                  <span className="text-[14px] text-ink">{r}</span>
+                </li>
               ))}
-            </div>
+            </ul>
           </section>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3 pt-6">
             <button
               onClick={newDebate}
-              className="flex-1 rounded-xl bg-gradient-to-r from-student to-opponent px-4 py-3 text-sm font-bold text-white"
+              className="label flex-1 border border-ink bg-ink px-4 py-3 text-surface transition hover:bg-accent hover:border-accent"
             >
-              Debate something new
+              New debate
             </button>
             <button
               onClick={() => router.push("/debate")}
-              className="rounded-xl border border-white/15 px-4 py-3 text-sm font-semibold text-slate-200"
+              className="label border border-line bg-surface px-4 py-3 text-muted transition hover:border-accent hover:text-ink"
             >
               Review transcript
             </button>
