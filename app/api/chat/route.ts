@@ -58,7 +58,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const reply = await chat(messages, { maxTokens: 400, temperature: 0.75 });
+    // Short, punchy replies — cap tokens so the opponent stays snappy.
+    const reply = await chat(messages, { maxTokens: 180, temperature: 0.75 });
     return NextResponse.json({ reply, turn });
   } catch (err: any) {
     console.error("[/api/chat]", err);
