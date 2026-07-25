@@ -102,13 +102,19 @@ export default function DebateScreen() {
       content: t.content,
     }));
 
+    // Give the classifier the point the student is replying to, so a concise
+    // rebuttal is judged in context rather than in isolation.
+    const lastOpponent = [...turns]
+      .reverse()
+      .find((t) => t.role === "opponent")?.content;
+
     setScoring(true);
     let weakness: StrengthLabel | null = null;
     try {
       const sres = await fetch("/api/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ argument: text, topic }),
+        body: JSON.stringify({ argument: text, topic, context: lastOpponent }),
       });
       const sdata = await sres.json();
       if (sres.ok) {

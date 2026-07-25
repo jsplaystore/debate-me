@@ -4,18 +4,18 @@ import { classifyArgument } from "@/lib/hf";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type Body = { argument: string; topic: string };
+type Body = { argument: string; topic: string; context?: string };
 
 export async function POST(req: NextRequest) {
   try {
-    const { argument, topic } = (await req.json()) as Body;
+    const { argument, topic, context } = (await req.json()) as Body;
     if (!argument || !topic) {
       return NextResponse.json(
         { error: "Missing argument or topic." },
         { status: 400 }
       );
     }
-    const result = await classifyArgument(argument, topic);
+    const result = await classifyArgument(argument, topic, context);
     return NextResponse.json(result);
   } catch (err: any) {
     console.error("[/api/score]", err);

@@ -339,31 +339,47 @@ function argmax(scores: Record<StrengthLabel, number>): {
  */
 export async function classifyArgument(
   argument: string,
-  topic: string
+  topic: string,
+  context?: string
 ): Promise<ClassifierResult> {
   assertToken();
   return PROVIDER === "groq"
-    ? classifyWithGroq(argument, topic)
+    ? classifyWithGroq(argument, topic, context)
     : classifyWithHf(argument, topic);
 }
 
 async function classifyWithGroq(
   argument: string,
-  topic: string
+  topic: string,
+  context?: string
 ): Promise<ClassifierResult> {
   const system: ChatMessage = {
     role: "system",
     content: [
-      "You are a strict debate-argument evaluator. Judge ONLY the argument's quality relative to the debate topic.",
+      "You are a FAIR debate-argument evaluator (think reasonable coach, not a harsh critic). Judge the quality of the student's latest argument as a move in the debate.",
       "Return a SINGLE JSON object and nothing else, with a probability (0-1) for each label; the four should sum to about 1:",
       '{ "strong": <0-1>, "weak": <0-1>, "off-topic": <0-1>, "contains-factual-error": <0-1> }',
-      "Definitions — strong: well-reasoned, specific, evidence-backed. weak: vague, unsupported, or logically thin. off-topic: does not address the resolution. contains-factual-error: makes a claim that is actually false or misleading.",
-      "Only assign high 'contains-factual-error' if the argument states something genuinely FALSE — not merely because it cites facts.",
+      "CALIBRATION (important):",
+      "- strong: makes a clear point supported by a REASON, mechanism, example, comparison, or evidence. A concise argument still counts as strong if it has real reasoning. Brevity is NOT weakness.",
+      "- weak: ONLY for genuinely vague or unsupported assertions with no reasoning (e.g. 'it's just better', 'everyone knows that'), or an obvious logical fallacy. If the student gives any real reason or example, it is NOT weak.",
+      "- off-topic: does not address the resolution at all.",
+      "- contains-factual-error: asserts something clearly, verifiably FALSE. Do NOT flag this merely because facts are cited, and do NOT flag recent studies/events that may simply postdate your training as errors.",
+      "Default to 'strong' when the argument has a legitimate point; reserve 'weak' for arguments that truly lack support. Be decisive but fair — avoid overconfident 90%+ scores unless the argument is clearly one category.",
     ].join("\n"),
   };
   const user: ChatMessage = {
     role: "user",
-    content: `Resolution: "${topic}"\nStudent's argument: ${argument}\n\nReturn the JSON scores.`,
+    content: [
+      `Resolution: "${topic}"`,
+      context
+        ? `The opponent just argued: ${context}\n(Judge the student's argument as a reply to this.)`
+        : "",
+      `Student's latest argument: ${argument}`,
+      ``,
+      `Return the JSON scores.`,
+    ]
+      .filter(Boolean)
+      .join("\n"),
   };
 
   let raw: Record<string, number>;
