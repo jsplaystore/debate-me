@@ -33,18 +33,22 @@ export default function DebateScreen() {
   const [error, setError] = useState<string | null>(null);
   const [statusIdx, setStatusIdx] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const endRef = useRef<HTMLDivElement>(null);
   const openedRef = useRef(false);
 
   useEffect(() => {
     if (!started || !topic) router.replace("/");
   }, [started, topic, router]);
 
+  // Keep the newest turn in view. scrollIntoView finds whichever ancestor
+  // actually scrolls (the inner stream or the window), so it works regardless
+  // of layout. rAF ensures it runs after the new message has painted.
   useEffect(() => {
-    scrollRef.current?.scrollTo({
-      top: scrollRef.current.scrollHeight,
-      behavior: "smooth",
-    });
-  }, [turns, aiThinking]);
+    const id = requestAnimationFrame(() =>
+      endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
+    );
+    return () => cancelAnimationFrame(id);
+  }, [turns, aiThinking, scoring]);
 
   // Cycle status lines while the AI is thinking.
   useEffect(() => {
@@ -212,6 +216,9 @@ export default function DebateScreen() {
             {error}
           </div>
         )}
+
+        {/* scroll anchor — keeps the newest turn in view */}
+        <div ref={endRef} className="h-1" />
       </div>
 
       {/* Composer */}
