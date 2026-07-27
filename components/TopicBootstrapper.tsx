@@ -49,8 +49,8 @@ export function TopicBootstrapper({
       {open && (
         <div className="space-y-3 border-t border-line px-4 py-4">
           <p className="text-[13px] text-muted">
-            Paste lecture notes, an article, or a textbook excerpt. The AI pulls
-            out the most debatable claims for you to pick from.
+            Paste lecture notes, an article, or a textbook excerpt. It pulls out
+            the most debatable claims for you to pick from.
           </p>
           <textarea
             value={reading}

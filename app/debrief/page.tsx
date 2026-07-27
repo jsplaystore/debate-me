@@ -130,7 +130,7 @@ export default function DebriefScreen() {
             <ul className="space-y-5">
               {debrief.strengths.length === 0 && (
                 <li className="text-[14px] text-muted">
-                  No standout arguments this round — see the gaps below.
+                  No standout arguments this round. See the gaps below.
                 </li>
               )}
               {debrief.strengths.map((s, i) => (

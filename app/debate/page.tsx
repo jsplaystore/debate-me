@@ -50,7 +50,7 @@ export default function DebateScreen() {
     return () => cancelAnimationFrame(id);
   }, [turns, aiThinking, scoring]);
 
-  // Cycle status lines while the AI is thinking.
+  // Cycle status lines while the opponent is thinking.
   useEffect(() => {
     if (!aiThinking) return;
     const t = setInterval(
@@ -82,7 +82,7 @@ export default function DebateScreen() {
         body: JSON.stringify({ topic, position, history: [], opening: true }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "The AI failed to open.");
+      if (!res.ok) throw new Error(data.error || "The opponent failed to open.");
       addTurn({ role: "opponent", content: data.reply });
     } catch (e: any) {
       setError(e.message);
@@ -143,7 +143,8 @@ export default function DebateScreen() {
         body: JSON.stringify({ topic, position, history, weakness }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "The AI failed to respond.");
+      if (!res.ok)
+        throw new Error(data.error || "The opponent failed to respond.");
       addTurn({ role: "opponent", content: data.reply });
     } catch (e: any) {
       setError(e.message);
@@ -170,7 +171,7 @@ export default function DebateScreen() {
             <div className="kbd mt-1.5">
               You <span className="text-accent">{position.toUpperCase()}</span>
               {"  ·  "}
-              AI{" "}
+              Opponent{" "}
               <span className="text-low">
                 {position === "For" ? "AGAINST" : "FOR"}
               </span>
@@ -217,7 +218,7 @@ export default function DebateScreen() {
           </div>
         )}
 
-        {/* scroll anchor — keeps the newest turn in view */}
+        {/* scroll anchor: keeps the newest turn in view */}
         <div ref={endRef} className="h-1" />
       </div>
 
@@ -234,7 +235,7 @@ export default function DebateScreen() {
           }}
           placeholder={
             turns.length === 0
-              ? "The AI is preparing its opening…"
+              ? "Your opponent is preparing its opening…"
               : "Make your argument…"
           }
           rows={3}
@@ -244,7 +245,7 @@ export default function DebateScreen() {
         <div className="mt-2 flex items-center justify-between">
           <span className="kbd">
             {canEnd
-              ? "Minimum reached — end whenever you're ready"
+              ? "Minimum reached. End whenever you're ready"
               : `${remaining} more argument${remaining === 1 ? "" : "s"} to unlock the debrief`}
           </span>
           <div className="flex items-center gap-2">

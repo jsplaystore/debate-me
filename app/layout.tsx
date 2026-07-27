@@ -17,9 +17,9 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Debate Me — Adversarial learning",
+  title: "Debate Me: Adversarial learning",
   description:
-    "Defend what you think you know. An AI argues the opposing side of any concept until you prove you understand it — then hands you a structured debrief.",
+    "Defend what you think you know. Your opponent argues the opposing side of any concept until you prove you understand it, then hands you a structured debrief.",
 };
 
 export const viewport: Viewport = {

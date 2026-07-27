@@ -46,7 +46,7 @@ export default function TopicScreen() {
         return; // hard-stop: don't debate settled facts or falsehoods
       }
     } catch {
-      /* fail open — if the gate errors, let the debate proceed */
+      /* fail open: if the gate errors, let the debate proceed */
     } finally {
       setChecking(false);
     }
@@ -70,8 +70,9 @@ export default function TopicScreen() {
           <span className="label hidden sm:block">Adversarial learning</span>
         </div>
         <p className="mt-2 max-w-lg text-[14px] text-muted">
-          Defend what you think you know. An AI takes the opposing side and
-          presses until you prove you understand it — then hands you a debrief.
+          Defend what you think you know. Your opponent takes the opposing side
+          and presses until you prove you understand it, then hands you a
+          debrief.
         </p>
       </header>
 
@@ -127,11 +128,11 @@ export default function TopicScreen() {
           ))}
         </div>
         <p className="mt-2 text-[13px] text-muted">
-          The AI argues{" "}
+          Your opponent argues{" "}
           <span className="font-mono text-low">
             {position === "For" ? "AGAINST" : "FOR"}
-          </span>{" "}
-          — the opposite of you.
+          </span>
+          , the opposite of you.
         </p>
       </section>
 
@@ -157,7 +158,7 @@ export default function TopicScreen() {
             <p className="mt-2 text-[14px] text-ink">{blocked.reason}</p>
             <p className="mt-1 text-[13px] text-muted">
               This tool won&apos;t argue against settled facts or defend
-              falsehoods — you&apos;d be practicing on misinformation.
+              falsehoods. You&apos;d be practicing on misinformation.
             </p>
             {blocked.suggestion && (
               <button

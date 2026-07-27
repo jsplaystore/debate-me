@@ -91,6 +91,19 @@ export type ChatMessage = {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/**
+ * Remove em/en dashes from any model output before it reaches the UI. They read
+ * as an "AI tell", so we replace them with plain punctuation. Hyphen-minus in
+ * words like "self-similar" is left untouched.
+ */
+export function sanitizeText(s: string): string {
+  return s
+    .replace(/\s*[—–]+\s*/g, ", ")
+    .replace(/([.!?;:,])\s*,\s+/g, "$1 ")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
+}
+
 // ---- Error classification -------------------------------------------------
 
 /** Transient errors worth retrying / falling back on (capacity, cold start). */
@@ -226,7 +239,7 @@ export async function chat(
   for (const model of CHAT_MODEL_FALLBACKS) {
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        return await callChatModel(model, messages, opts);
+        return sanitizeText(await callChatModel(model, messages, opts));
       } catch (err) {
         lastErr = err;
         const terminal = isTerminal(err);
@@ -276,7 +289,7 @@ export async function chatJson<T = any>(
     {
       role: "user",
       content:
-        "Your previous reply was not valid JSON. Reply again with ONLY the JSON object — no prose, no markdown code fences, no commentary. Start with { and end with }.",
+        "Your previous reply was not valid JSON. Reply again with ONLY the JSON object, no prose, no markdown code fences, no commentary. Start with { and end with }.",
     },
   ];
   const second = await chat(strictMessages, {
@@ -364,7 +377,7 @@ async function classifyWithGroq(
       "- weak: ONLY for genuinely vague or unsupported assertions with no reasoning (e.g. 'it's just better', 'everyone knows that'), or an obvious logical fallacy. If the student gives any real reason or example, it is NOT weak.",
       "- off-topic: does not address the resolution at all.",
       "- contains-factual-error: asserts something clearly, verifiably FALSE. Do NOT flag this merely because facts are cited, and do NOT flag recent studies/events that may simply postdate your training as errors.",
-      "Default to 'strong' when the argument has a legitimate point; reserve 'weak' for arguments that truly lack support. Be decisive but fair — avoid overconfident 90%+ scores unless the argument is clearly one category.",
+      "Default to 'strong' when the argument has a legitimate point; reserve 'weak' for arguments that truly lack support. Be decisive but fair; avoid overconfident 90%+ scores unless the argument is clearly one category.",
     ].join("\n"),
   };
   const user: ChatMessage = {

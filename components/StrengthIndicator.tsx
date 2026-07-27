@@ -31,7 +31,7 @@ export function StrengthIndicator({
     return (
       <div className="mt-2 flex items-center gap-2">
         <span className="label">Scoring</span>
-        <span className="kbd animate-blink">—</span>
+        <span className="kbd animate-blink">...</span>
       </div>
     );
   }
