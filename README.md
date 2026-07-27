@@ -1,4 +1,4 @@
-# Debate Me 🥊
+# Debate Me 
 
 **An AI-powered adversarial learning tool for college students.**
 
@@ -104,6 +104,3 @@ Open <http://localhost:3000>.
 - **Technical execution** — end-to-end functional, real model calls, adaptive prompting, provider fallback, resilient JSON parsing, mobile-friendly UI.
 - **Pitch & demo** — the debrief screen is the money shot: Debate Score, strengths, unaddressed counterarguments, and next readings.
 
-## License
-
-MIT — built for a hackathon, use it however helps you learn.
