@@ -89,18 +89,3 @@ npm run dev
 Open <http://localhost:3000>.
 
 > **Resilience:** `chat()` retries transient errors (rate-limit / "model busy") with backoff and **falls back across several open instruct models** so a demo never dead-ends on one model's capacity. Hard failures (bad key, exhausted quota) surface as a clean, human-readable message instead of a 500. Pin the primary model without touching code via `GROQ_CHAT_MODEL` (e.g. `llama-3.1-8b-instant`).
-
-## Deploy (Vercel)
-
-1. Push this repo to GitHub (public).
-2. Import it into [Vercel](https://vercel.com/new).
-3. Add the env var **`GROQ_API_KEY`** (and optionally `GROQ_CHAT_MODEL`) in Project Settings → Environment Variables.
-4. Deploy. Vercel auto-detects Next.js.
-
-## Judging rubric fit
-
-- **Educational impact** — targets active-recall's weakness: it forces defense, cross-examination, and gap-finding, then tells you what to study.
-- **Creative use of AI/ML** — two models in a feedback loop (generative opponent + a separate argument classifier driving adaptation), not a single-prompt chatbot.
-- **Technical execution** — end-to-end functional, real model calls, adaptive prompting, provider fallback, resilient JSON parsing, mobile-friendly UI.
-- **Pitch & demo** — the debrief screen is the money shot: Debate Score, strengths, unaddressed counterarguments, and next readings.
-
